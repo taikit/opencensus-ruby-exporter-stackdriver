@@ -79,7 +79,8 @@ module OpenCensus
             max_queue: 1000,
             max_threads: 1,
             auto_terminate_time: 10,
-            mock_client: nil
+            mock_client: nil,
+            service_address: nil
           @project_id = final_project_id project_id
 
           @executor = create_executor max_threads, max_queue
@@ -96,7 +97,7 @@ module OpenCensus
             timeout ||= Google::Cloud.configure.trace.timeout
             client_config ||= Google::Cloud.configure.trace.client_config
             @client_promise = create_client_promise \
-              @executor, credentials, scope, client_config, timeout
+              @executor, credentials, scope, client_config, timeout, service_address
           end
         end
 
@@ -211,7 +212,7 @@ module OpenCensus
         # we actually need it. This is important because if it is intialized
         # too early, before a fork, it can go into a bad state.
         def create_client_promise executor, credentials, scopes, client_config,
-                                  timeout
+                                  timeout, service_address
           Concurrent::Promise.new executor: executor do
             Google::Cloud::Trace::V2.new(
               credentials: credentials,
@@ -219,7 +220,8 @@ module OpenCensus
               client_config: client_config,
               timeout: timeout,
               lib_name: "opencensus",
-              lib_version: OpenCensus::Stackdriver::VERSION
+              lib_version: OpenCensus::Stackdriver::VERSION,
+              service_address: service_address
             )
           end
         end
